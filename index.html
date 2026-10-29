@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The Park That Was</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #090909;
+        color: #e8e8e3;
+        font-family: "Courier New", Courier, monospace;
+      }
+
+      button,
+      .upload-label {
+        font: inherit;
+        cursor: pointer;
+        background: #111;
+        color: #eee;
+        border: 1px solid #777;
+        padding: 10px 13px;
+        font-size: 12px;
+      }
+
+      button:hover,
+      button.active,
+      .upload-label:hover {
+        background: #eee;
+        color: #111;
+      }
+
+      #streetview {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
+
+      .top {
+        position: fixed;
+        top: 18px;
+        left: 18px;
+        z-index: 2;
+        background: #090909;
+        border: 1px solid #777;
+        padding: 16px 19px;
+        max-width: min(450px, calc(100vw - 36px));
+      }
+
+      .top h1 {
+        font-size: clamp(18px, 2.5vw, 30px);
+        letter-spacing: -0.05em;
+        margin: 0 0 8px;
+      }
+
+      .top small {
+        font-size: 11px;
+        color: #aaa;
+      }
+
+      .actions {
+        position: fixed;
+        top: 18px;
+        right: 18px;
+        z-index: 3;
+        display: flex;
+        gap: 8px;
+      }
+
+      .panel {
+        position: fixed;
+        right: 18px;
+        top: 70px;
+        bottom: 18px;
+        width: min(390px, calc(100vw - 36px));
+        background: #0a0a0a;
+        border: 1px solid #777;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        overflow: auto;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      .panel-head {
+        padding: 20px;
+        border-bottom: 1px solid #444;
+      }
+
+      .eyebrow {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        color: #aaa;
+      }
+
+      .intro {
+        font-size: 13px;
+        line-height: 1.65;
+        margin: 13px 0 0;
+      }
+
+      .notes {
+        padding: 8px 20px 20px;
+      }
+
+      .note {
+        border-bottom: 1px solid #333;
+      }
+
+      .note button {
+        display: block;
+        width: 100%;
+        border: 0;
+        text-align: left;
+        padding: 16px 0;
+        background: transparent;
+        color: #eee;
+      }
+
+      .note button:hover {
+        color: #aaa;
+      }
+
+      .note p {
+        font-size: 13px;
+        line-height: 1.7;
+        color: #c9c9c9;
+        margin: 0 0 18px;
+      }
+
+      .foot {
+        padding: 16px 20px;
+        border-top: 1px solid #444;
+        margin-top: auto;
+        font-size: 10px;
+        color: #888;
+      }
+
+      /* SPOTIFY */
+
+      .player {
+        position: fixed;
+        z-index: 5;
+        bottom: 18px;
+        left: 18px;
+        background: #111;
+        border: 1px solid #777;
+        padding: 12px;
+        width: min(340px, calc(100vw - 36px));
+      }
+
+      .player iframe {
+        width: 100%;
+        height: 152px;
+        border: 0;
+        border-radius: 4px;
+      }
+
+      .player h2 {
+        font-size: 12px;
+        margin: 0 0 10px;
+      }
+
+      /* GALLERY */
+
+      .gallery {
+        position: fixed;
+        inset: 0;
+        background: #090909;
+        z-index: 4;
+        overflow: auto;
+        padding: 100px 32px 36px;
+      }
+
+      .gallery-head {
+        border-bottom: 1px solid #555;
+        padding-bottom: 18px;
+        margin-bottom: 24px;
+      }
+
+      .gallery h2 {
+        font-size: clamp(22px, 4vw, 46px);
+        letter-spacing: -0.06em;
+        margin: 8px 0;
+      }
+
+      .subtitle {
+        color: #aaa;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .gallery-close {
+        position: fixed;
+        top: 22px;
+        right: 22px;
+        z-index: 6;
+      }
+
+      /* UPLOAD SECTION */
+
+      .upload-section {
+        border: 1px dashed #666;
+        padding: 24px;
+        margin-bottom: 35px;
+      }
+
+      .upload-section h3 {
+        font-size: 16px;
+        margin: 0 0 12px;
+        font-weight: normal;
+      }
+
+      .upload-section p {
+        color: #999;
+        font-size: 12px;
+        line-height: 1.7;
+        max-width: 520px;
+      }
+
+      .upload-label {
+        display: inline-block;
+        margin-top: 12px;
+      }
+
+      #photoUpload {
+        display: none;
+      }
+
+      .upload-status {
+        margin-top: 14px;
+        font-size: 11px;
+        color: #aaa;
+      }
+
+      .section-heading {
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        margin: 30px 0 18px;
+        border-bottom: 1px solid #333;
+        padding-bottom: 12px;
+      }
+
+      /* PHOTO GRID */
+
+      .gallery-grid {
+        columns: 4 220px;
+        column-gap: 12px;
+      }
+
+      .gallery-item {
+        display: block;
+        break-inside: avoid;
+        margin: 0 0 12px;
+        cursor: pointer;
+        width: 100%;
+      }
+
+      .gallery-item img,
+      .gallery-item video {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: 580px;
+        object-fit: cover;
+      }
+
+      .gallery-item figcaption {
+        font-size: 11px;
+        padding: 7px 0 4px;
+        color: #aaa;
+      }
+
+      .gallery-item:hover img {
+        opacity: 0.8;
+      }
+
+      /* LIGHTBOX */
+
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.97);
+        z-index: 9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 55px 18px;
+      }
+
+      .lightbox img,
+      .lightbox video {
+        max-width: 100%;
+        max-height: calc(100vh - 105px);
+        object-fit: contain;
+      }
+
+      .lightbox .close {
+        position: absolute;
+        right: 18px;
+        top: 18px;
+      }
+
+      .lightbox .counter {
+        position: absolute;
+        bottom: 16px;
+        left: 20px;
+        font-size: 12px;
+        color: #aaa;
+      }
+
+      .lightbox .prev,
+      .lightbox .next {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+
+      .lightbox .prev {
+        left: 12px;
+      }
+      .lightbox .next {
+        right: 12px;
+      }
+
+      @media (max-width: 700px) {
+        .top {
+          top: 12px;
+          left: 12px;
+          padding: 12px;
+          max-width: 55%;
+        }
+
+        .actions {
+          top: 12px;
+          right: 12px;
+          flex-direction: column;
+        }
+
+        .panel {
+          top: 110px;
+          right: 12px;
+          bottom: 12px;
+        }
+
+        .gallery {
+          padding: 110px 12px 20px;
+        }
+
+        .gallery-grid {
+          columns: 2 140px;
+          column-gap: 8px;
+        }
+
+        .gallery-close {
+          top: 12px;
+          right: 12px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- GOOGLE STREET VIEW -->
+
+    <iframe
+      id="streetview"
+      title="Older Street View of Stuyvesant Cove Park"
+      src="https://www.google.com/maps/embed?pb=!4v1793233475359!6m8!1m7!1spsCeHisoQCsinmRUmZ3e3A!2m2!1d40.73281329066707!2d-73.97408611255011!3f63.84192820770754!4f-1.142105013483274!5f0.4000000000000002"
+      allowfullscreen
+      loading="eager"
+      referrerpolicy="strict-origin-when-cross-origin"
+    >
+    </iframe>
+
+    <header class="top">
+      <h1>THE PARK THAT WAS</h1>
+      <small>STUYVESANT COVE PARK / NYC</small>
+    </header>
+
+    <div class="actions">
+      <button id="galleryToggle">PHOTOS / VIDEOS</button>
+      <button id="notesToggle">CLOSE NOTES ×</button>
+      <button id="musicToggle">♫ LISTEN</button>
+    </div>
+
+    <!-- FIELD NOTES -->
+
+    <aside class="panel" id="panel">
+      <div class="panel-head">
+        <div class="eyebrow">FIELD NOTES / PRESENT DAY</div>
+
+        <p class="intro">
+          Google Maps hasn't quite caught up with Stuyvesant Cove Park.
+          <br /><br />
+          The Street View imagery still shows an older version of the
+          waterfront, before much of it was redesigned. I've spent a lot of time
+          here, so walking through this version feels strange. It's familiar,
+          but almost everything is slightly out of place.
+          <br /><br />
+          These are a few things I've noticed while comparing it to the park
+          today.
+        </p>
+      </div>
+
+      <div class="notes">
+        <div class="note">
+          <button aria-expanded="true">01 / THE ENTRANCE <span>−</span></button>
+          <p>
+            The entrance is one of the biggest changes. The old green spaces and
+            benches are gone, and flood walls now separate parts of the park
+            from the path behind it. People still pass through constantly,
+            especially runners using the bike path, but the way the space is
+            organized feels completely different.
+          </p>
+        </div>
+
+        <div class="note">
+          <button aria-expanded="false">02 / THE SEATING <span>+</span></button>
+          <p hidden>
+            What used to be a greener stretch of the park now has
+            amphitheatre-like seating that extends much further back. It's a
+            pretty significant change in how the space is used. Instead of just
+            walking past the greenery, people now have somewhere to sit, gather,
+            and look out at the water.
+          </p>
+        </div>
+
+        <div class="note">
+          <button aria-expanded="false">
+            03 / THE RAILINGS <span>+</span>
+          </button>
+          <p hidden>
+            This is a smaller change, but one I keep thinking about. The
+            railings are wooden now, which I only noticed recently when I saw
+            rainwater collecting on them. I'm not sure exactly when they were
+            replaced, but it's funny how something you walk past all the time
+            can suddenly look completely new.
+          </p>
+        </div>
+
+        <div class="note">
+          <button aria-expanded="false">
+            04 / THE GREENERY <span>+</span>
+          </button>
+          <p hidden>
+            There's still plenty of greenery, but it occupies the park
+            differently now. Some of the planted areas visible in Street View
+            have been replaced or rearranged to make room for paths and seating.
+            It's interesting to see how much the layout has changed without the
+            park necessarily feeling any less green.
+          </p>
+        </div>
+      </div>
+
+      <div class="foot">STREET VIEW © GOOGLE · OBSERVATIONS FROM 2026</div>
+    </aside>
+
+    <!-- PHOTO GALLERY -->
+
+    <main id="gallery" class="gallery" hidden>
+      <button id="galleryClose" class="gallery-close">BACK TO PARK ×</button>
+
+      <div class="gallery-head">
+        <div class="eyebrow">THE PARK THAT WAS / PERSONAL ARCHIVE</div>
+
+        <h2>THE PARK AS I KNOW IT.</h2>
+
+        <p class="subtitle">
+          Photographs and videos from visits to the waterfront. Click to view.
+        </p>
+      </div>
+
+      <!-- NEW UPLOAD SECTION -->
+
+      <section class="upload-section">
+        <div class="eyebrow">CONTRIBUTE / 001</div>
+
+        <h3>YOUR VERSION OF THE PARK.</h3>
+
+        <p>
+          I've spent a lot of time at Stuyvesant Cove, but I'm obviously not the
+          only person who has. If you have a photograph of the park, I'd love to
+          see it. Add your own perspective to this collection.
+        </p>
+
+        <label for="photoUpload" class="upload-label">
+          + ADD YOUR PHOTOGRAPHS
+        </label>
+
+        <input type="file" id="photoUpload" accept="image/*" multiple />
+
+        <p class="upload-status" id="uploadStatus">
+          Photos added here are visible only in your current browser session.
+        </p>
+      </section>
+
+      <!-- VISITOR PHOTOS -->
+
+      <section id="visitorSection" hidden>
+        <h3 class="section-heading">CONTRIBUTED PHOTOGRAPHS</h3>
+
+        <div id="visitorGrid" class="gallery-grid"></div>
+      </section>
+
+      <!-- ORIGINAL ARCHIVE -->
+
+      <h3 class="section-heading">MY PHOTOGRAPHIC ARCHIVE</h3>
+
+      <div id="galleryGrid" class="gallery-grid"></div>
+    </main>
+
+    <!-- IMAGE VIEWER -->
+
+    <div
+      id="lightbox"
+      class="lightbox"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-label="Media viewer"
+    >
+      <button class="close" id="lightboxClose">CLOSE ×</button>
+
+      <button class="prev" id="prevMedia">←</button>
+
+      <div id="lightboxMedia"></div>
+
+      <button class="next" id="nextMedia">→</button>
+
+      <div class="counter" id="mediaCounter"></div>
+    </div>
+
+    <!-- SPOTIFY -->
+
+    <section id="player" class="player" hidden>
+      <h2>♫ LISTEN WHILE YOU WALK</h2>
+
+      <iframe
+        title="Spotify playlist"
+        src="https://open.spotify.com/embed/playlist/5BNl3WgyTeIdljY8nuE0JW?utm_source=generator&si=62b91dbaf9324b1d"
+        allow="
+          autoplay;
+          clipboard-write;
+          encrypted-media;
+          fullscreen;
+          picture-in-picture;
+        "
+        loading="lazy"
+      >
+      </iframe>
+    </section>
+
+    <script>
+      // MAIN CONTROLS
+
+      const panel = document.getElementById("panel");
+      const player = document.getElementById("player");
+      const gallery = document.getElementById("gallery");
+
+      const notesToggle = document.getElementById("notesToggle");
+      const musicToggle = document.getElementById("musicToggle");
+      const galleryToggle = document.getElementById("galleryToggle");
+
+      notesToggle.onclick = () => {
+        panel.hidden = !panel.hidden;
+        notesToggle.textContent = panel.hidden
+          ? "OPEN NOTES +"
+          : "CLOSE NOTES ×";
+      };
+
+      musicToggle.onclick = () => {
+        player.hidden = !player.hidden;
+        musicToggle.textContent = player.hidden ? "♫ LISTEN" : "♫ CLOSE PLAYER";
+      };
+
+      document.querySelectorAll(".note button").forEach((button) => {
+        button.onclick = () => {
+          const paragraph = button.nextElementSibling;
+          paragraph.hidden = !paragraph.hidden;
+
+          const open = !paragraph.hidden;
+          button.setAttribute("aria-expanded", String(open));
+          button.querySelector("span").textContent = open ? "−" : "+";
+        };
+      });
+
+      function setGallery(open) {
+        gallery.hidden = !open;
+        galleryToggle.hidden = open;
+        panel.hidden = open;
+        notesToggle.textContent = panel.hidden
+          ? "OPEN NOTES +"
+          : "CLOSE NOTES ×";
+      }
+
+      galleryToggle.onclick = () => setGallery(true);
+
+      document.getElementById("galleryClose").onclick = () => {
+        setGallery(false);
+      };
+
+      // ORIGINAL PHOTOS AND VIDEOS
+
+      const media = [
+        { src: "photos/DSC02927.jpg", type: "image" },
+        { src: "photos/IMG_0247.jpg", type: "image" },
+        { src: "photos/IMG_0249.jpg", type: "image" },
+        { src: "photos/IMG_0254.jpg", type: "image" },
+        { src: "photos/IMG_0256.jpg", type: "image" },
+        { src: "photos/IMG_0266.jpg", type: "image" },
+        { src: "photos/IMG_0293.jpg", type: "image" },
+        { src: "photos/IMG_0307.jpg", type: "image" },
+        { src: "photos/IMG_0310.jpg", type: "image" },
+        { src: "photos/IMG_0689.jpg", type: "image" },
+        { src: "photos/IMG_5393.jpg", type: "image" },
+        { src: "photos/IMG_5723.jpg", type: "image" },
+        { src: "photos/IMG_6068.jpg", type: "image" },
+        { src: "photos/IMG_6094.jpg", type: "image" },
+        { src: "photos/IMG_6112.jpg", type: "image" },
+        { src: "photos/IMG_6154.jpg", type: "image" },
+        { src: "photos/IMG_6279.jpg", type: "image" },
+        { src: "photos/IMG_6285.jpg", type: "image" },
+        { src: "photos/IMG_6367.jpg", type: "image" },
+        { src: "photos/IMG_6406.jpg", type: "image" },
+        { src: "photos/IMG_8748.jpg", type: "image" },
+        { src: "photos/IMG_8749.MOV", type: "video" },
+        { src: "photos/IMG_9723.MOV", type: "video" },
+      ];
+
+      const galleryGrid = document.getElementById("galleryGrid");
+      const visitorGrid = document.getElementById("visitorGrid");
+      const visitorSection = document.getElementById("visitorSection");
+
+      const lightbox = document.getElementById("lightbox");
+      const lightboxMedia = document.getElementById("lightboxMedia");
+      const mediaCounter = document.getElementById("mediaCounter");
+
+      let current = 0;
+
+      // BUILD PHOTO CARDS
+
+      function createCard(item, index, container, contributed = false) {
+        const figure = document.createElement("figure");
+        figure.className = "gallery-item";
+        figure.tabIndex = 0;
+        figure.setAttribute("role", "button");
+
+        const element = document.createElement(
+          item.type === "video" ? "video" : "img",
+        );
+
+        element.src = item.src;
+
+        if (item.type === "video") {
+          element.preload = "metadata";
+          element.muted = true;
+          element.playsInline = true;
+        } else {
+          element.loading = "lazy";
+          element.alt = "Photograph of Stuyvesant Cove Park";
+        }
+
+        const caption = document.createElement("figcaption");
+
+        caption.textContent =
+          String(index + 1).padStart(2, "0") +
+          " / " +
+          (contributed
+            ? "CONTRIBUTED PHOTO"
+            : item.type === "video"
+              ? "VIDEO"
+              : "PHOTO");
+
+        figure.appendChild(element);
+        figure.appendChild(caption);
+
+        const open = () => showMedia(media.indexOf(item));
+
+        figure.onclick = open;
+
+        figure.onkeydown = (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            open();
+          }
+        };
+
+        container.appendChild(figure);
+      }
+
+      // RENDER ORIGINAL ARCHIVE
+
+      media.forEach((item, index) => {
+        createCard(item, index, galleryGrid);
+      });
+
+      // NEW: VISITOR PHOTO UPLOADS
+
+      const photoUpload = document.getElementById("photoUpload");
+      const uploadStatus = document.getElementById("uploadStatus");
+
+      photoUpload.addEventListener("change", (event) => {
+        const files = Array.from(event.target.files);
+        let added = 0;
+
+        files.forEach((file) => {
+          // Accept images only
+          if (!file.type.startsWith("image/")) return;
+
+          // Limit individual files to 15MB
+          if (file.size > 15 * 1024 * 1024) return;
+
+          // Create a temporary browser URL
+          const imageURL = URL.createObjectURL(file);
+
+          const item = {
+            src: imageURL,
+            type: "image",
+            name: file.name,
+          };
+
+          // Add the photo to the lightbox collection
+          media.push(item);
+
+          // Add the photo to the contributed section
+          createCard(item, visitorGrid.children.length, visitorGrid, true);
+
+          added++;
+        });
+
+        if (added > 0) {
+          visitorSection.hidden = false;
+
+          uploadStatus.textContent =
+            added +
+            (added === 1 ? " photograph added." : " photographs added.") +
+            " Visible in this browser session only.";
+        } else {
+          uploadStatus.textContent =
+            "No photos added. Please choose image files under 15MB.";
+        }
+
+        // Allow uploading the same file again
+        photoUpload.value = "";
+      });
+
+      // LIGHTBOX
+
+      function showMedia(index) {
+        current = (index + media.length) % media.length;
+
+        const item = media[current];
+
+        lightboxMedia.replaceChildren();
+
+        const element = document.createElement(
+          item.type === "video" ? "video" : "img",
+        );
+
+        element.src = item.src;
+
+        if (item.type === "video") {
+          element.controls = true;
+          element.playsInline = true;
+        } else {
+          element.alt = "Waterfront photograph";
+        }
+
+        lightboxMedia.appendChild(element);
+
+        mediaCounter.textContent = current + 1 + " / " + media.length;
+
+        lightbox.hidden = false;
+      }
+
+      function closeMedia() {
+        lightbox.hidden = true;
+        lightboxMedia.replaceChildren();
+      }
+
+      document.getElementById("lightboxClose").onclick = closeMedia;
+
+      document.getElementById("prevMedia").onclick = () => {
+        showMedia(current - 1);
+      };
+
+      document.getElementById("nextMedia").onclick = () => {
+        showMedia(current + 1);
+      };
+
+      lightbox.addEventListener("click", (event) => {
+        if (event.target === lightbox) closeMedia();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          if (!lightbox.hidden) closeMedia();
+          else if (!gallery.hidden) setGallery(false);
+        }
+
+        if (!lightbox.hidden && event.key === "ArrowRight") {
+          showMedia(current + 1);
+        }
+
+        if (!lightbox.hidden && event.key === "ArrowLeft") {
+          showMedia(current - 1);
+        }
+      });
+    </script>
+  </body>
+</html>
